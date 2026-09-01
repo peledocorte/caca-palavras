@@ -1,0 +1,469 @@
+Aqui está o código completo do jogo em HTML:
+html
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caça-Palavras — Fauna Brasileira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --jungle: #16332B;
+    --jungle-deep: #0E241E;
+    --parchment: #F2E9D8;
+    --parchment-dim: #E7DCC5;
+    --ink: #1B2A22;
+    --marigold: #E0A93A;
+    --coral: #D66853;
+    --teal: #3E8977;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--jungle);
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(62,137,119,0.25), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(224,169,58,0.12), transparent 50%);
+    font-family: 'Space Mono', monospace;
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .sheet {
+    width: 100%;
+    max-width: 900px;
+    background: var(--parchment);
+    border-radius: 6px;
+    padding: 36px 40px 32px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sheet::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 10px;
+    background: repeating-linear-gradient(90deg, var(--teal) 0 24px, var(--marigold) 24px 48px);
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 22px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 40px);
+    margin: 0;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+
+  h1 span {
+    display: block;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 0.4em;
+    color: var(--teal);
+    margin-top: 2px;
+  }
+
+  .stats {
+    display: flex;
+    gap: 18px;
+    font-size: 13px;
+  }
+
+  .stat b {
+    display: block;
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--jungle);
+  }
+
+  .board-wrap {
+    display: flex;
+    gap: 36px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  #grid {
+    display: grid;
+    gap: 2px;
+    user-select: none;
+    touch-action: none;
+    background: var(--ink);
+    padding: 2px;
+    border-radius: 4px;
+    width: fit-content;
+  }
+
+  .cell {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--parchment);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.08s ease;
+  }
+
+  .cell.selecting { background: var(--coral); color: var(--parchment); }
+  .cell.found { background: var(--marigold); color: var(--jungle-deep); }
+  .cell.found.overlap { background: var(--teal); color: var(--parchment); }
+
+  aside {
+    flex: 1;
+    min-width: 220px;
+  }
+
+  aside h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    font-weight: 600;
+    text-transform: none;
+    margin: 0 0 12px;
+    color: var(--teal);
+    border-bottom: 1px dashed var(--jungle);
+    padding-bottom: 8px;
+  }
+
+  ul#words {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 10px;
+  }
+
+  ul#words li {
+    font-size: 13.5px;
+    padding: 6px 10px;
+    background: var(--parchment-dim);
+    border-radius: 3px;
+    border-left: 3px solid var(--teal);
+  }
+
+  ul#words li.done {
+    text-decoration: line-through;
+    color: #8b8478;
+    border-left-color: var(--marigold);
+    background: transparent;
+  }
+
+  .win-banner {
+    display: none;
+    margin-top: 22px;
+    padding: 16px 20px;
+    background: var(--jungle);
+    color: var(--parchment);
+    border-radius: 4px;
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+  }
+
+  .win-banner.show { display: block; }
+
+  .actions {
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+  }
+
+  button {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 18px;
+    border: 2px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  button:hover { background: var(--ink); color: var(--parchment); }
+
+  @media (max-width: 600px) {
+    .sheet { padding: 24px 18px; }
+    .cell { width: 22px; height: 22px; font-size: 11px; }
+    ul#words { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <header>
+      <h1>Caça-Palavras<span>fauna brasileira</span></h1>
+      <div class="stats">
+        <div class="stat"><b id="foundCount">0</b>encontradas</div>
+        <div class="stat"><b id="totalCount">0</b>ao todo</div>
+        <div class="stat"><b id="timer">00:00</b>tempo</div>
+      </div>
+    </header>
+
+    <div class="board-wrap">
+      <div id="grid"></div>
+      <aside>
+        <h2>Encontre os bichos escondidos</h2>
+        <ul id="words"></ul>
+        <div class="win-banner" id="winBanner">Você encontrou todos os bichos! 🌿</div>
+        <div class="actions">
+          <button id="newGame">Novo jogo</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+<script>
+const WORDS = ["ONCA","TUCANO","CAPIVARA","ARARA","JACARE","TATU","MICO","SAGUI","JAGUAR","PREGUICA"];
+const SIZE = 14;
+const DIRS = [
+  [0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]
+];
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+let grid, placements, foundWords, selecting, selStart, selCells, startTime, timerInt;
+
+function emptyGrid() {
+  return Array.from({length: SIZE}, () => Array(SIZE).fill(null));
+}
+
+function tryPlace(word) {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const dir = DIRS[Math.floor(Math.random()*DIRS.length)];
+    const row = Math.floor(Math.random()*SIZE);
+    const col = Math.floor(Math.random()*SIZE);
+    const endRow = row + dir[0]*(word.length-1);
+    const endCol = col + dir[1]*(word.length-1);
+    if (endRow < 0 || endRow >= SIZE || endCol < 0 || endCol >= SIZE) continue;
+
+    let ok = true;
+    for (let i = 0; i < word.length; i++) {
+      const r = row + dir[0]*i, c = col + dir[1]*i;
+      const existing = grid[r][c];
+      if (existing !== null && existing !== word[i]) { ok = false; break; }
+    }
+    if (!ok) continue;
+
+    for (let i = 0; i < word.length; i++) {
+      const r = row + dir[0]*i, c = col + dir[1]*i;
+      grid[r][c] = word[i];
+    }
+    return { word, row, col, dir };
+  }
+  return null;
+}
+
+function buildPuzzle() {
+  grid = emptyGrid();
+  placements = [];
+  const sorted = [...WORDS].sort((a,b) => b.length - a.length);
+  for (const w of sorted) {
+    const p = tryPlace(w);
+    if (p) placements.push(p);
+  }
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      if (grid[r][c] === null) {
+        grid[r][c] = LETTERS[Math.floor(Math.random()*LETTERS.length)];
+      }
+    }
+  }
+}
+
+function cellKey(r,c) { return r + "_" + c; }
+
+function render() {
+  const gridEl = document.getElementById('grid');
+  gridEl.style.gridTemplateColumns = `repeat(${SIZE}, 30px)`;
+  gridEl.innerHTML = "";
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      const div = document.createElement('div');
+      div.className = 'cell';
+      div.textContent = grid[r][c];
+      div.dataset.r = r;
+      div.dataset.c = c;
+      gridEl.appendChild(div);
+    }
+  }
+
+  const wordsEl = document.getElementById('words');
+  wordsEl.innerHTML = "";
+  WORDS.forEach(w => {
+    const li = document.createElement('li');
+    li.textContent = w;
+    li.dataset.word = w;
+    wordsEl.appendChild(li);
+  });
+
+  document.getElementById('totalCount').textContent = WORDS.length;
+  document.getElementById('foundCount').textContent = "0";
+  document.getElementById('winBanner').classList.remove('show');
+}
+
+function cellsBetween(r1,c1,r2,c2) {
+  const dr = Math.sign(r2-r1), dc = Math.sign(c2-c1);
+  const len = Math.max(Math.abs(r2-r1), Math.abs(c2-c1));
+  if (dr !== 0 && dc !== 0 && Math.abs(r2-r1) !== Math.abs(c2-c1)) return null;
+  if (dr === 0 && dc === 0) return [[r1,c1]];
+  const cells = [];
+  for (let i = 0; i <= len; i++) {
+    cells.push([r1 + dr*i, c1 + dc*i]);
+  }
+  return cells;
+}
+
+function clearSelectingStyle() {
+  document.querySelectorAll('.cell.selecting').forEach(el => el.classList.remove('selecting'));
+}
+
+function highlightSelection(cells) {
+  clearSelectingStyle();
+  cells.forEach(([r,c]) => {
+    const el = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+    if (el && !el.classList.contains('found')) el.classList.add('selecting');
+  });
+}
+
+function wordFromCells(cells) {
+  return cells.map(([r,c]) => grid[r][c]).join("");
+}
+
+function markFound(cells, word) {
+  cells.forEach(([r,c]) => {
+    const el = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+    if (el) {
+      if (el.classList.contains('found')) el.classList.add('overlap');
+      el.classList.add('found');
+      el.classList.remove('selecting');
+    }
+  });
+  const li = document.querySelector(`li[data-word="${word}"]`);
+  if (li) li.classList.add('done');
+  foundWords.add(word);
+  document.getElementById('foundCount').textContent = foundWords.size;
+  if (foundWords.size === WORDS.length) {
+    document.getElementById('winBanner').classList.add('show');
+    clearInterval(timerInt);
+  }
+}
+
+function checkSelection() {
+  if (!selCells || selCells.length < 2) { clearSelectingStyle(); return; }
+  const forward = wordFromCells(selCells);
+  const backward = forward.split("").reverse().join("");
+  const match = WORDS.find(w => (w === forward || w === backward) && !foundWords.has(w));
+  if (match) {
+    markFound(selCells, match);
+  } else {
+    clearSelectingStyle();
+  }
+}
+
+function coordsFromEvent(e) {
+  let target = e.target;
+  if (e.touches && e.touches.length) {
+    const t = e.touches[0];
+    target = document.elementFromPoint(t.clientX, t.clientY);
+  }
+  if (!target || !target.classList.contains('cell')) return null;
+  return [parseInt(target.dataset.r), parseInt(target.dataset.c)];
+}
+
+function attachEvents() {
+  const gridEl = document.getElementById('grid');
+
+  const start = (e) => {
+    const coords = coordsFromEvent(e);
+    if (!coords) return;
+    selecting = true;
+    selStart = coords;
+    selCells = [coords];
+    highlightSelection(selCells);
+    e.preventDefault();
+  };
+
+  const move = (e) => {
+    if (!selecting) return;
+    const coords = coordsFromEvent(e);
+    if (!coords) return;
+    const cells = cellsBetween(selStart[0], selStart[1], coords[0], coords[1]);
+    if (cells) {
+      selCells = cells;
+      highlightSelection(selCells);
+    }
+    e.preventDefault();
+  };
+
+  const end = () => {
+    if (!selecting) return;
+    selecting = false;
+    checkSelection();
+  };
+
+  gridEl.addEventListener('mousedown', start);
+  gridEl.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+  gridEl.addEventListener('touchstart', start, {passive:false});
+  gridEl.addEventListener('touchmove', move, {passive:false});
+  window.addEventListener('touchend', end);
+}
+
+function startTimer() {
+  clearInterval(timerInt);
+  startTime = Date.now();
+  timerInt = setInterval(() => {
+    const secs = Math.floor((Date.now()-startTime)/1000);
+    const m = String(Math.floor(secs/60)).padStart(2,'0');
+    const s = String(secs%60).padStart(2,'0');
+    document.getElementById('timer').textContent = `${m}:${s}`;
+  }, 500);
+}
+
+function newGame() {
+  buildPuzzle();
+  foundWords = new Set();
+  selecting = false;
+  selCells = [];
+  render();
+  startTimer();
+}
+
+document.getElementById('newGame').addEventListener('click', newGame);
+attachEvents();
+newGame();
+</script>
+</body>
+</html>
+
+É só colar num arquivo .html e abrir no navegador. Se quiser trocar o tema (as palavras) ou o tamanho da grade, é só editar a constante WORDS e o SIZE no início do script.
+
+
+            
